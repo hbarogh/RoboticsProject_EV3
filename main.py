@@ -19,7 +19,7 @@ def main():
     carriage_motor = Motor(Port.C, Direction.COUNTERCLOCKWISE, [8, 24, 40])
 
     gyro_sensor = GyroSensor(Port.S1)
-    touch_sensor = TouchSensor(Port.S2)
+    touch_sensor = TouchSensor(Port.S3)
 
     robot = StairClimberEV3(front_motor, back_motor, carriage_motor, gyro_sensor, touch_sensor, ev3)
 
@@ -43,7 +43,6 @@ class StairClimberEV3:
     self.initialize_carriage_structure()
 
   def initialize_carriage_structure(self):
-    """Recreates the initialization from LEGO’s EV3 example."""
     # Move the lift assembly upward until touch sensor is pressed
     self.back_motor.dc(-20)
     self.carriage_motor.dc(100)
@@ -78,6 +77,17 @@ class StairClimberEV3:
     self.stop_robot()
     print("EV3: finished move_forward")
 
+  def move_forward_descending(self, speed=500):
+    print("inside move_forward_descending")
+    self.front_motor.run(speed)
+    self.back_motor.run(speed)
+    
+    while not self.detect_step_descending():
+      wait(100)
+    
+    self.stop_robot()
+    print("finished move_forward_descending")
+  
   def stop_robot(self):
     """Stops horizontal movement."""
     self.front_motor.stop()
@@ -103,7 +113,7 @@ class StairClimberEV3:
 
   def detect_step_descending(self):
     angle = self.gyro_sensor.angle()
-    return angle > 8
+    return angle < -8
 
   # -----------------------------------------------------------------
   # CARRIAGE CONTROL 
@@ -142,7 +152,7 @@ class StairClimberEV3:
     watch = StopWatch()
     while watch.time() < 3000:
       self.back_motor.dc(70)
-      self.front_motor.dc(40)
+      self.front_motor.dc(30)
 
     # (3) Pull robot fully onto step
     self.operate_carriage(ClimbingDirections.DOWN)
@@ -156,7 +166,7 @@ class StairClimberEV3:
     print("EV3: Starting descend_step()")
 
     # STEP 1 — Move forward until robot starts tilting downward
-    self.drive_base.drive(300, 0)
+    self.move_forward_descending()
     while not self.detect_step_descending():
       wait(10)
 
