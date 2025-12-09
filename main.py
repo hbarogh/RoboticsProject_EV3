@@ -14,24 +14,16 @@ class ClimbingDirections:
 
 def main():
     ev3 = EV3Brick()
+    front_motor = Motor(Port.A, Direction.COUNTERCLOCKWISE)
+    back_motor = Motor(Port.D, Direction.CLOCKWISE)
+    carriage_motor = Motor(Port.C, Direction.COUNTERCLOCKWISE)
 
-    left_motor = Motor(Port.B, Direction.COUNTERCLOCKWISE)
-    right_motor = Motor(Port.A, Direction.COUNTERCLOCKWISE)
-    carriage_motor = Motor(Port.D, Direction.COUNTERCLOCKWISE)
-    carriage_wheel_motor = Motor(Port.C, Direction.COUNTERCLOCKWISE)
+    gyro_sensor = GyroSensor(Port.S1)
+    touch_sensor = TouchSensor(Port.S2)
 
-    gyro_sensor = GyroSensor(Port.S2)
-    touch_sensor = TouchSensor(Port.S3)
-
-    robot = StairClimberEV3(left_motor, right_motor,
-                            carriage_wheel_motor, carriage_motor,
-                            gyro_sensor, touch_sensor, ev3)
+    robot = StairClimberEV3(front_motor, back_motor, carriage_motor, gyro_sensor, touch_sensor, ev3)
 
     robot.run()
-
-
-
-
 
 class StairClimberEV3:
   """
@@ -39,11 +31,10 @@ class StairClimberEV3:
   Structure matches EXACTLY the Spike Prime StairClimber class.
   """
 
-  def __init__(self, left_motor, right_motor, carriage_wheel_motor, carriage_motor, gyro_sensor, touch_sensor, brick: EV3Brick):
+  def __init__(self, front_motor, back_motor, carriage_motor, gyro_sensor, touch_sensor, brick: EV3Brick):
 
-    self.left_motor = left_motor
-    self.right_motor = right_motor
-    self.carriage_wheel_motor = carriage_wheel_motor
+    self.front_motor = front_motor
+    self.back_motor = back_motor
     self.carriage_motor = carriage_motor
     self.gyro_sensor = gyro_sensor
     self.touch_sensor = touch_sensor
@@ -52,16 +43,14 @@ class StairClimberEV3:
     self.number_of_steps = 0
 
     wheel_diameter = 56
-    axle_track = 120
-    self.drive_base = DriveBase(self.left_motor, self.right_motor, wheel_diameter, axle_track)
-
+    axle_track = 100
     
     self.initialize_carriage_structure()
 
   def initialize_carriage_structure(self):
     """Recreates the initialization from LEGO’s EV3 example."""
     # Move the lift assembly upward until touch sensor is pressed
-    self.right_motor.dc(-20)
+    self.back_motor.dc(-20)
     self.carriage_motor.dc(100)
 
     while not self.touch_sensor.pressed():
@@ -69,12 +58,12 @@ class StairClimberEV3:
 
     # Move down a bit
     self.carriage_motor.dc(-100)
-    self.right_motor.dc(40)
+    self.back_motor.dc(40)
     wait(50)
 
     # Move to calibrated zero
     self.carriage_motor.run_angle(-145, 510)
-    self.right_motor.hold()
+    self.back_motor.hold()
     self.carriage_motor.run_angle(-30, 44)
     self.carriage_motor.reset_angle(0)
     self.gyro_sensor.reset_angle(0)
@@ -85,7 +74,8 @@ class StairClimberEV3:
   def move_forward(self, speed=500):
     """Matches Spike version: drive forward until detect_step becomes True."""
     print("EV3: inside move_forward")
-    self.drive_base.drive(speed, 0)
+    self.back_motor.run(speed)
+    self.front_motor.run(speed)
 
     while not self.detect_step():
       wait(10)
@@ -95,7 +85,8 @@ class StairClimberEV3:
 
   def stop_robot(self):
     """Stops horizontal movement."""
-    self.drive_base.stop()
+    self.front_motor.stop()
+    self.back_motor.stop()
     print("EV3: robot stopped")
 
   # -----------------------------------------------------------------
@@ -140,7 +131,7 @@ class StairClimberEV3:
     # Run carriage wheel motor for 1 second (Spike method)
     watch = StopWatch()
     while watch.time() < 1000:
-      self.carriage_wheel_motor.run(200)
+      self.back_motor.run(200)
 
     # (3) Pull robot fully onto step
     self.operate_carriage(ClimbingDirections.DOWN)
@@ -166,11 +157,11 @@ class StairClimberEV3:
     # Run carriage wheel motor while rolling
     watch = StopWatch()
     self.drive_base.drive(200, 0)
-    self.carriage_wheel_motor.run(300)
+    self.back_motor.run(300)
     while watch.time() < 1000:
       wait(10)
 
-    self.carriage_wheel_motor.stop()
+    self.back_motor.stop()
 
     # STEP 3 — Robot should flatten out once it reaches next step
     while self.gyro_sensor.angle() < -2:  # still going down
@@ -208,26 +199,26 @@ class StairClimberEV3:
 
     while not self.completed_ascent():
       print("EV3 run(): executing climb phase")
-      self.drive_base.drive(500, 0)
+      self.move_forward()
 
       # Run both carriage motors simultaneously (non-blocking)
       self.carriage_motor.run(700)
-      self.carriage_wheel_motor.run(700)
+      self.back_motor.run(700)
 
       watch = StopWatch()
       while watch.time() < 2000:
         wait(10)
 
-      self.drive_base.stop()
+      self.front_motor.stop()
       self.carriage_motor.stop()
-      self.carriage_wheel_motor.stop()
+      self.back_motor.stop()
 
-      self.drive_base.drive(500, 0)
+      self.move_forward()
       self.operate_carriage(ClimbingDirections.DOWN)
 
     while not self.completed_descent():
       if not self.detect_step_descending():
-        self.drive_base.drive(300,0)
+        self.move_forward()
       else:
         self.descend_step()
   
