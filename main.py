@@ -15,8 +15,8 @@ class ClimbingDirections:
 def main():
     ev3 = EV3Brick()
     front_motor = Motor(Port.A, Direction.COUNTERCLOCKWISE)
-    back_motor = Motor(Port.D, Direction.CLOCKWISE)
-    carriage_motor = Motor(Port.C, Direction.COUNTERCLOCKWISE)
+    back_motor = Motor(Port.D, Direction.COUNTERCLOCKWISE)
+    carriage_motor = Motor(Port.C, Direction.COUNTERCLOCKWISE, [8, 24, 40])
 
     gyro_sensor = GyroSensor(Port.S1)
     touch_sensor = TouchSensor(Port.S2)
@@ -26,11 +26,6 @@ def main():
     robot.run()
 
 class StairClimberEV3:
-  """
-  EV3 version of Hayden's StairClimber class.
-  Structure matches EXACTLY the Spike Prime StairClimber class.
-  """
-
   def __init__(self, front_motor, back_motor, carriage_motor, gyro_sensor, touch_sensor, brick: EV3Brick):
 
     self.front_motor = front_motor
@@ -40,8 +35,8 @@ class StairClimberEV3:
     self.touch_sensor = touch_sensor
     self.brick = brick
 
-    self.number_of_steps = 0
-
+    self.number_of_steps = 3
+    self.climbed_steps = 0
     wheel_diameter = 56
     axle_track = 100
     
@@ -78,7 +73,7 @@ class StairClimberEV3:
     self.front_motor.run(speed)
 
     while not self.detect_step():
-      wait(10)
+      wait(100)
 
     self.stop_robot()
     print("EV3: finished move_forward")
@@ -97,26 +92,40 @@ class StairClimberEV3:
     Spike version uses ultrasonic distance < 3 cm.
     EV3 version uses gyro angle rising above a threshold.
     """
-
+    print("inside of detect step function")
     angle = self.gyro_sensor.angle()
-    step_detected = angle > 8  # Equivalent to “tilting upward”
+    step_detected = angle < -24  # Equivalent to “tilting upward”
+    print("step detected")
+    print(step_detected)
+    print("angle: ")
+    print(angle)
     return step_detected
 
   def detect_step_descending(self):
     angle = self.gyro_sensor.angle()
-    return angle < -8
+    return angle > 8
 
   # -----------------------------------------------------------------
   # CARRIAGE CONTROL 
   # -----------------------------------------------------------------
-  def operate_carriage_motor(self, speed, target_angle):
-    self.carriage_motor.run_target(speed, target_angle)
-
   def operate_carriage(self, direction):
     if direction == ClimbingDirections.UP:
-      self.operate_carriage_motor(2000, 1000)
+      # Move the lift assembly upward until touch sensor is pressed
+      self.back_motor.dc(-20)
+      self.carriage_motor.dc(100)
+
+      while not self.touch_sensor.pressed():
+        wait(10)
+      print("hit after the while loop in the operate carriage function ")
+      self.back_motor.brake()
+      self.carriage_motor.brake()
     else:
-      self.operate_carriage_motor(-250, -1000)
+      print("in the else statement in the operate_carriage function")
+      self.carriage_motor.run_angle(-145, 510)
+      self.back_motor.hold()
+      self.carriage_motor.run_angle(-30, 44)
+      self.carriage_motor.reset_angle(0)
+      self.gyro_sensor.reset_angle(0)
 
   
   def climb_step(self):
@@ -136,7 +145,7 @@ class StairClimberEV3:
     # (3) Pull robot fully onto step
     self.operate_carriage(ClimbingDirections.DOWN)
 
-    self.number_of_steps += 1
+    self.climbed_steps += 1
 
   # -----------------------------------------------------------------
   # DESCENT
@@ -181,13 +190,10 @@ class StairClimberEV3:
   
   def completed_ascent(self):
     """Spike: detecting black + distance jump. EV3: angle flattening at top."""
-    angle = self.gyro_sensor.angle()
-
-    if angle < 2:  # robot levels off at top of stairs
-      print("EV3: completed_ascent() TRUE")
+    if self.climbed_steps == self.number_of_steps:
       return True
-
-    return False
+    else:
+      return False
 
   def completed_descent(self):
     """Spike version checks number_of_steps == 0."""
@@ -199,22 +205,14 @@ class StairClimberEV3:
 
     while not self.completed_ascent():
       print("EV3 run(): executing climb phase")
-      self.move_forward()
-
-      # Run both carriage motors simultaneously (non-blocking)
-      self.carriage_motor.run(700)
-      self.back_motor.run(700)
-
-      watch = StopWatch()
-      while watch.time() < 2000:
-        wait(10)
-
-      self.front_motor.stop()
-      self.carriage_motor.stop()
-      self.back_motor.stop()
-
-      self.move_forward()
-      self.operate_carriage(ClimbingDirections.DOWN)
+      step_detected = self.detect_step()
+      if not self.detect_step():
+        print("step detected run function: ")
+        print(step_detected)
+        self.move_forward()
+      else:
+        print("inside of else statement to climb step")
+        self.climb_step()
 
     while not self.completed_descent():
       if not self.detect_step_descending():
