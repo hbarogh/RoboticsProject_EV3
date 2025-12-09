@@ -77,10 +77,10 @@ class StairClimberEV3:
     self.stop_robot()
     print("EV3: finished move_forward")
 
-  def move_forward_descending(self, speed=500):
+  def move_forward_descending(self, speed=200):
     print("inside move_forward_descending")
-    self.front_motor.run(speed)
-    self.back_motor.run(speed)
+    self.front_motor.dc(-50)
+    self.back_motor.dc(-60)
     
     while not self.detect_step_descending():
       wait(100)
@@ -121,8 +121,8 @@ class StairClimberEV3:
   def operate_carriage(self, direction):
     if direction == ClimbingDirections.UP:
       # Move the lift assembly upward until touch sensor is pressed
-      self.carriage_motor.run(400)
-      self.front_motor.dc(50)
+      self.carriage_motor.run(500)
+      self.front_motor.dc(30)
       # move until touch sensor hit
       while not self.touch_sensor.pressed():
         wait(5)
@@ -132,12 +132,32 @@ class StairClimberEV3:
     else:
       print("in the else statement in the operate_carriage function")
       self.carriage_motor.run(-300)
-
       while self.carriage_motor.angle() > 0:
         wait(5)
 
       self.carriage_motor.stop()
 
+  #testing this function
+  def operate_carriage_descending(self, direction):
+    if direction == ClimbingDirections.UP:
+      self.carriage_motor.run(400)
+      # self.front_motor.dc(50)
+      # move until touch sensor hit
+      while not self.touch_sensor.pressed():
+        wait(5)
+
+      self.carriage_motor.stop()
+      print("hit after the while loop in the operate carriage function ")
+    else:
+      print("in the else statement in the operate_carriage descending function")
+      self.carriage_motor.run(-300)
+      
+      self.front_motor.dc(-50)
+      self.back_motor.dc(-50)
+      while self.carriage_motor.angle() > 0:
+        wait(5)
+
+      self.carriage_motor.stop()
   
   def climb_step(self):
     print("EV3: Starting climb_step()")
@@ -150,7 +170,7 @@ class StairClimberEV3:
 
     
     watch = StopWatch()
-    while watch.time() < 3000:
+    while watch.time() < 1000:
       self.back_motor.dc(70)
       self.front_motor.dc(50)
 
@@ -173,26 +193,27 @@ class StairClimberEV3:
     self.stop_robot()
 
     # STEP 2 — Lower carriage to stabilize descent
-    self.operate_carriage(ClimbingDirections.DOWN)
+    print("doing the carriage descending in descend step")
+    self.operate_carriage_descending(ClimbingDirections.DOWN)
 
     # Run carriage wheel motor while rolling
     watch = StopWatch()
-    self.drive_base.drive(200, 0)
-    self.back_motor.run(300)
-    while watch.time() < 1000:
-      wait(10)
-
+    
+    while watch.time() < 3000:
+      self.back_motor.dc(-50)
+      self.front_motor.dc(-50)
     self.back_motor.stop()
 
     # STEP 3 — Robot should flatten out once it reaches next step
-    while self.gyro_sensor.angle() < -2:  # still going down
-      self.drive_base.drive(200, 0)
-      wait(10)
+    # while self.gyro_sensor.angle() < -2:  # still going down
+    #   self.drive_base.drive(200, 0)
+    #   wait(10)
 
     self.stop_robot()
 
     # STEP 4 — Raise carriage to reset posture
-    self.operate_carriage(ClimbingDirections.UP)
+    print("doing the carriage up now in the descend step")
+    self.operate_carriage_descending(ClimbingDirections.UP)
 
     # Update step count
     self.number_of_steps -= 1
@@ -209,7 +230,12 @@ class StairClimberEV3:
 
   def completed_descent(self):
     """Spike version checks number_of_steps == 0."""
-    return self.number_of_steps == 0
+    print("number of steps: ")
+    print(self.number_of_steps)
+    if self.number_of_steps == 0:
+      return True
+    else: 
+      return False
 
   
   def run(self):
@@ -225,18 +251,24 @@ class StairClimberEV3:
       else:
         print("inside of else statement to climb step")
         self.climb_step()
+    print("EV3: ascent complete")
 
+    watch = StopWatch()
+    
+    while watch.time() < 3000:
+      self.back_motor.dc(50)
+      self.front_motor.dc(50)
+      
+    self.back_motor.stop()
+    self.front_motor.stop()
+    
     while not self.completed_descent():
       if not self.detect_step_descending():
-        self.move_forward()
+        self.move_forward_descending()
       else:
         self.descend_step()
   
     self.stop_robot()
-    print("EV3: ascent complete")
-
-
-
 
 if __name__ == '__main__':
     main()
