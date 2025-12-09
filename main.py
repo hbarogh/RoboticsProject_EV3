@@ -1,20 +1,26 @@
-#!/usr/bin/env pybricks-micropython
 from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import (Motor, TouchSensor, ColorSensor,
-                                 InfraredSensor, UltrasonicSensor, GyroSensor)
-from pybricks.parameters import Port, Stop, Direction, Button, Color
-from pybricks.tools import wait, StopWatch, DataLog
-from pybricks.robotics import DriveBase
-from pybricks.media.ev3dev import SoundFile, ImageFile
+from pybricks.ev3devices import Motor, GyroSensor, TouchSensor
+from pybricks.parameters import Port, Direction
+from stairclimber_ev3 import StairClimberEV3
 
 
-# This program requires LEGO EV3 MicroPython v2.0 or higher.
-# Click "Open user guide" on the EV3 extension tab for more information.
+def main():
+    ev3 = EV3Brick()
+
+    left_motor = Motor(Port.B, Direction.COUNTERCLOCKWISE)
+    right_motor = Motor(Port.A, Direction.COUNTERCLOCKWISE)
+    carriage_motor = Motor(Port.D, Direction.COUNTERCLOCKWISE)
+    carriage_wheel_motor = Motor(Port.C, Direction.COUNTERCLOCKWISE)
+
+    gyro_sensor = GyroSensor(Port.S2)
+    touch_sensor = TouchSensor(Port.S3)
+
+    robot = StairClimberEV3(left_motor, right_motor,
+                            carriage_wheel_motor, carriage_motor,
+                            gyro_sensor, touch_sensor, ev3)
+
+    robot.run()
 
 
-# Create your objects here.
-ev3 = EV3Brick()
-
-
-# Write your program here.
-ev3.speaker.beep()
+if __name__ == '__main__':
+    main()
