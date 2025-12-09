@@ -104,7 +104,7 @@ class StairClimberEV3:
     """
     print("inside of detect step function")
     angle = self.gyro_sensor.angle()
-    step_detected = angle < -24  # Equivalent to “tilting upward”
+    step_detected = angle < -10  # Equivalent to “tilting upward”
     print("step detected")
     print(step_detected)
     print("angle: ")
@@ -113,7 +113,7 @@ class StairClimberEV3:
 
   def detect_step_descending(self):
     angle = self.gyro_sensor.angle()
-    return angle < -8
+    return angle < 8
 
   # -----------------------------------------------------------------
   # CARRIAGE CONTROL 
@@ -122,7 +122,7 @@ class StairClimberEV3:
     if direction == ClimbingDirections.UP:
       # Move the lift assembly upward until touch sensor is pressed
       self.carriage_motor.run(400)
-
+      self.front_motor.dc(50)
       # move until touch sensor hit
       while not self.touch_sensor.pressed():
         wait(5)
@@ -141,7 +141,7 @@ class StairClimberEV3:
   
   def climb_step(self):
     print("EV3: Starting climb_step()")
-
+    
     # (1) Move forward until angle rises → approaching step
     self.move_forward()
 
@@ -152,12 +152,12 @@ class StairClimberEV3:
     watch = StopWatch()
     while watch.time() < 3000:
       self.back_motor.dc(70)
-      self.front_motor.dc(30)
+      self.front_motor.dc(50)
 
     # (3) Pull robot fully onto step
     self.operate_carriage(ClimbingDirections.DOWN)
-
     self.climbed_steps += 1
+    self.gyro_sensor.reset_angle(0)
 
   # -----------------------------------------------------------------
   # DESCENT
