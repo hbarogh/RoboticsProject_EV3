@@ -1,7 +1,8 @@
+#!/usr/bin/env pybricks-micropython
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import Motor, GyroSensor, TouchSensor
 from pybricks.parameters import Port, Direction
-from stairclimber_ev3 import StairClimberEV3
+from StairClimber import StairClimberEV3
 
 
 def main():

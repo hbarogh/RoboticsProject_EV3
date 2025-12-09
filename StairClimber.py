@@ -1,3 +1,4 @@
+#!/usr/bin/env pybricks-micropython
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import Motor, GyroSensor, TouchSensor
 from pybricks.parameters import Port, Direction, Color
@@ -17,9 +18,7 @@ class StairClimberEV3:
   Structure matches EXACTLY the Spike Prime StairClimber class.
   """
 
-  def __init__(self, left_motor, right_motor,
-                carriage_wheel_motor, carriage_motor,
-                gyro_sensor, touch_sensor, brick: EV3Brick):
+  def __init__(self, left_motor, right_motor, carriage_wheel_motor, carriage_motor, gyro_sensor, touch_sensor, brick: EV3Brick):
 
     self.left_motor = left_motor
     self.right_motor = right_motor
@@ -45,7 +44,7 @@ class StairClimberEV3:
     self.carriage_motor.dc(100)
 
     while not self.touch_sensor.pressed():
-        wait(10)
+      wait(10)
 
     # Move down a bit
     self.carriage_motor.dc(-100)
@@ -68,7 +67,7 @@ class StairClimberEV3:
     self.drive_base.drive(speed, 0)
 
     while not self.detect_step():
-        wait(10)
+      wait(10)
 
     self.stop_robot()
     print("EV3: finished move_forward")
@@ -89,7 +88,6 @@ class StairClimberEV3:
 
     angle = self.gyro_sensor.angle()
     step_detected = angle > 8  # Equivalent to “tilting upward”
-    print(f"EV3 detect_step(): angle={angle}, detected={step_detected}")
     return step_detected
 
   def detect_step_descending(self):
@@ -121,13 +119,12 @@ class StairClimberEV3:
     # Run carriage wheel motor for 1 second (Spike method)
     watch = StopWatch()
     while watch.time() < 1000:
-        self.carriage_wheel_motor.run(200)
+      self.carriage_wheel_motor.run(200)
 
     # (3) Pull robot fully onto step
     self.operate_carriage(ClimbingDirections.DOWN)
 
     self.number_of_steps += 1
-    print(f"EV3 climbed step #{self.number_of_steps}")
 
   # -----------------------------------------------------------------
   # DESCENT
@@ -135,38 +132,38 @@ class StairClimberEV3:
   def descend_step(self):
     print("EV3: Starting descend_step()")
 
-  # STEP 1 — Move forward until robot starts tilting downward
-  self.drive_base.drive(300, 0)
-  while not self.detect_step_descending():
+    # STEP 1 — Move forward until robot starts tilting downward
+    self.drive_base.drive(300, 0)
+    while not self.detect_step_descending():
       wait(10)
 
-  self.stop_robot()
+    self.stop_robot()
 
-  # STEP 2 — Lower carriage to stabilize descent
-  self.operate_carriage(ClimbingDirections.DOWN)
+    # STEP 2 — Lower carriage to stabilize descent
+    self.operate_carriage(ClimbingDirections.DOWN)
 
-  # Run carriage wheel motor while rolling
-  watch = StopWatch()
-  self.drive_base.drive(200, 0)
-  self.carriage_wheel_motor.run(300)
-  while watch.time() < 1000:
+    # Run carriage wheel motor while rolling
+    watch = StopWatch()
+    self.drive_base.drive(200, 0)
+    self.carriage_wheel_motor.run(300)
+    while watch.time() < 1000:
       wait(10)
 
-  self.carriage_wheel_motor.stop()
+    self.carriage_wheel_motor.stop()
 
-  # STEP 3 — Robot should flatten out once it reaches next step
-  while self.gyro_sensor.angle() < -2:  # still going down
+    # STEP 3 — Robot should flatten out once it reaches next step
+    while self.gyro_sensor.angle() < -2:  # still going down
       self.drive_base.drive(200, 0)
       wait(10)
 
-  self.stop_robot()
+    self.stop_robot()
 
-  # STEP 4 — Raise carriage to reset posture
-  self.operate_carriage(ClimbingDirections.UP)
+    # STEP 4 — Raise carriage to reset posture
+    self.operate_carriage(ClimbingDirections.UP)
 
-  # Update step count
-  self.number_of_steps -= 1
-  print(f"EV3 descended, remaining steps = {self.number_of_steps}")
+    # Update step count
+    self.number_of_steps -= 1
+    
 
 
   
