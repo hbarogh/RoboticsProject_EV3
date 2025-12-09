@@ -111,21 +111,22 @@ class StairClimberEV3:
   def operate_carriage(self, direction):
     if direction == ClimbingDirections.UP:
       # Move the lift assembly upward until touch sensor is pressed
-      self.back_motor.dc(-20)
-      self.carriage_motor.dc(100)
+      self.carriage_motor.run(400)
 
+      # move until touch sensor hit
       while not self.touch_sensor.pressed():
-        wait(10)
+        wait(5)
+
+      self.carriage_motor.stop()
       print("hit after the while loop in the operate carriage function ")
-      self.back_motor.brake()
-      self.carriage_motor.brake()
     else:
       print("in the else statement in the operate_carriage function")
-      self.carriage_motor.run_angle(-145, 510)
-      self.back_motor.hold()
-      self.carriage_motor.run_angle(-30, 44)
-      self.carriage_motor.reset_angle(0)
-      self.gyro_sensor.reset_angle(0)
+      self.carriage_motor.run(-300)
+
+      while self.carriage_motor.angle() > 0:
+        wait(5)
+
+      self.carriage_motor.stop()
 
   
   def climb_step(self):
@@ -137,10 +138,11 @@ class StairClimberEV3:
     # (2) Raise carriage while wheels still driving
     self.operate_carriage(ClimbingDirections.UP)
 
-    # Run carriage wheel motor for 1 second (Spike method)
+    
     watch = StopWatch()
-    while watch.time() < 1000:
-      self.back_motor.run(200)
+    while watch.time() < 3000:
+      self.back_motor.dc(70)
+      self.front_motor.dc(40)
 
     # (3) Pull robot fully onto step
     self.operate_carriage(ClimbingDirections.DOWN)
