@@ -141,7 +141,6 @@ class StairClimberEV3:
   def operate_carriage_descending(self, direction):
     if direction == ClimbingDirections.UP:
       self.carriage_motor.run(400)
-      # self.front_motor.dc(50)
       # move until touch sensor hit
       while not self.touch_sensor.pressed():
         wait(5)
@@ -203,11 +202,6 @@ class StairClimberEV3:
       self.back_motor.dc(-50)
       self.front_motor.dc(-50)
     self.back_motor.stop()
-
-    # STEP 3 — Robot should flatten out once it reaches next step
-    # while self.gyro_sensor.angle() < -2:  # still going down
-    #   self.drive_base.drive(200, 0)
-    #   wait(10)
 
     self.stop_robot()
 
